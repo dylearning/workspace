@@ -8,6 +8,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import com.gi2t.face.detect.camera.CameraInterface;
@@ -39,6 +40,7 @@ import android.widget.Toast;
 
 import com.baidu.ai.aip.demo.FaceAdd;
 import com.baidu.ai.aip.demo.FaceDelete;
+import com.baidu.ai.aip.demo.FaceIdentify;
 import com.baidu.ai.aip.demo.FaceMatch;
 import com.baidu.ai.aip.demo.FaceVerify;
 
@@ -52,6 +54,7 @@ public class CameraActivity extends Activity{
 	private ImageView img_face_1;
 	private ImageView img_face_2;
 	private TextView txt_score;
+	private TextView txt_usrinfo;
 	private boolean isShowImg1 = true;
 	
 	private FaceView faceView;
@@ -59,7 +62,7 @@ public class CameraActivity extends Activity{
 	private MainHandler mMainHandler = null;
 	private GoogleFaceDetect googleFaceDetect = null;
 	
-	boolean isTakePicture = true;
+	boolean isTakePicture = false;
 	private String preSaveFileName="";
 	private String curSaveFileName="";
 	
@@ -69,6 +72,7 @@ public class CameraActivity extends Activity{
 	
 	private FaceDeleteThread mFaceDeleteThread;
 	private FaceVerifyThread mFaceVerifyThread;
+	private FaceIdentifyThread mFaceIdentifyThread;
 	private FaceAddThread mFaceAddThread;
 	private OpenDoorThread mOpenDoorThread;
 	
@@ -101,10 +105,12 @@ public class CameraActivity extends Activity{
 
 		
 		/* 人脸数据库删除*/
-		if(mFaceDeleteThread == null){
+		/*if(mFaceDeleteThread == null){
 			mFaceDeleteThread = new FaceDeleteThread();
 			mFaceDeleteThread.start();
-		}
+		}*/
+		
+		mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 2000);
 	}
 
 	@Override
@@ -123,6 +129,7 @@ public class CameraActivity extends Activity{
 		img_face_1 = (ImageView)findViewById(R.id.img_face_1);
 		img_face_2 = (ImageView)findViewById(R.id.img_face_2);
 		txt_score = (TextView)findViewById(R.id.txt_score);
+		txt_usrinfo = (TextView)findViewById(R.id.txt_usrinfo);	
 	}
 	private void initViewParams(){
 		LayoutParams params = surfaceView.getLayoutParams();
@@ -204,13 +211,18 @@ public class CameraActivity extends Activity{
 				isTakePicture = false;
 				
 				/* 人脸认证 */		
-				if(mFaceVerifyThread == null){
+				/*if(mFaceVerifyThread == null){
 					Log.e("dengying","mFaceVerifyThread == null");
 					mFaceVerifyThread = new FaceVerifyThread();
 					mFaceVerifyThread.start();
+				}*/
+				
+				/* 人脸识别  */
+				if(mFaceIdentifyThread == null){
+					mFaceIdentifyThread = new FaceIdentifyThread();
+					mFaceIdentifyThread.start();
 				}
 				
-
 				/* 人脸注册 */
 				//new FaceAddThread().start();
 				
@@ -237,7 +249,7 @@ public class CameraActivity extends Activity{
 				}
 				Toast.makeText(CameraActivity.this, s_delete_result, Toast.LENGTH_SHORT).show();
 				
-				mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 5000);
+				mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 2000);
 				//isTakePicture = true;
 				
 				break;					
@@ -258,9 +270,9 @@ public class CameraActivity extends Activity{
 					mOpenDoorThread = new OpenDoorThread();
 			        mOpenDoorThread.start();
 					
-					txt_score.setText("Score:"+verify_result);
+					//txt_score.setText("Score:"+verify_result);
 				}else{
-					s_verify_result="人脸验证失败,没有注册，现在开始注册，请稍后。";
+					s_verify_result="人脸验证,没有注册，现在开始注册。";
 					
 					/* 人脸注册 */
 					if(mFaceAddThread == null){
@@ -272,6 +284,83 @@ public class CameraActivity extends Activity{
 				Toast.makeText(CameraActivity.this, s_verify_result, Toast.LENGTH_SHORT).show();
 				
 				break;					
+				
+			case EventUtil.BAIDU_FACE_IDENTIFY:
+				if (mFaceIdentifyThread != null) {  
+					mFaceIdentifyThread.interrupt();  
+					mFaceIdentifyThread = null;  
+			     } 			
+				
+				String s_identify_result =  (String) msg.obj;
+				
+				String error_msg="";
+				
+				String group_id="";
+				String uid="";
+				String user_info="";
+				String scores="";
+				
+				String s_identify_message = "";
+				
+				try {
+					JSONObject root = new JSONObject(s_identify_result);
+					error_msg = root.getString("error_msg");
+					
+					txt_usrinfo.setText(error_msg);
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		
+				try {
+					JSONObject root = new JSONObject(s_identify_result);
+	
+			        JSONArray array = root.getJSONArray("result");
+
+			        for (int i = 0; i < array.length(); i++) {
+			            JSONObject result = array.getJSONObject(i);
+			            
+						group_id = result.getString("group_id");
+						uid = result.getString("uid");
+						user_info = result.getString("user_info");
+						scores = result.getString("scores");
+						
+						int length =scores.length();
+						scores = scores.substring(1,(length-1));
+						
+						Log.e("dengying","BAIDU_FACE_IDENTIFY group_id="+group_id+","+",uid="+uid+",user_info="+user_info+",scores="+scores);
+						
+						txt_usrinfo.setText(user_info+"\nuid="+uid+"\nscores="+scores);
+					}
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					Log.e("dengying","BAIDU_FACE_IDENTIFY e="+e.toString());
+				}
+				
+				if(error_msg.equals("no user in group")){
+					s_identify_message="人脸没有注册，现在开始注册！";
+
+					//人脸注册 
+					if(mFaceAddThread == null){
+						mFaceAddThread = new FaceAddThread();
+					}
+					mFaceAddThread.start();
+					
+				}else{
+					s_identify_message="人脸验证成功，开始开锁！";
+					
+					
+					//开门
+					mOpenDoorThread = new OpenDoorThread();
+			        mOpenDoorThread.start();
+			        
+			        int score =  (int)Double.parseDouble(scores);
+					txt_score.setText("Score:"+score);
+				}
+				
+				Toast.makeText(CameraActivity.this, s_identify_message, Toast.LENGTH_SHORT).show();
+				break;
 				
 			case EventUtil.BAIDU_FACE_ADD:
 				
@@ -291,7 +380,7 @@ public class CameraActivity extends Activity{
 				
 				Toast.makeText(CameraActivity.this, s_add_result, Toast.LENGTH_SHORT).show();
 				
-				mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 5000);
+				mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 3000);
 				//isTakePicture =  true;
 				
 				break;										
@@ -324,7 +413,7 @@ public class CameraActivity extends Activity{
 				
 				String open_door_ret =  (String) msg.obj;
 				
-				if(open_door_ret.equals("ok")){
+				if(open_door_ret.equals("OK")){
 					Toast.makeText(CameraActivity.this, "开门成功，开始下一个验证", Toast.LENGTH_SHORT).show();
 					
 					mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 5000);
@@ -472,6 +561,25 @@ public class CameraActivity extends Activity{
 		}
 	}
 	
+	
+	/* 人脸识别*/
+	class FaceIdentifyThread extends Thread {
+
+		public void run() {
+			Message mWait = mMainHandler.obtainMessage();
+			mWait.what = EventUtil.BAIDU_FACE_WAIT;
+			mWait.obj = "人脸开始识别，请稍后！";
+			mWait.sendToTarget();
+			
+			String identify_result = FaceIdentify.identify(curSaveFileName);
+			
+			Message m = mMainHandler.obtainMessage();
+			m.what = EventUtil.BAIDU_FACE_IDENTIFY;
+			m.obj = identify_result;
+			m.sendToTarget();
+		}
+	}
+	
 	/* 人脸对比*/
 	class FaceMatchThread extends Thread {
 
@@ -507,7 +615,7 @@ public class CameraActivity extends Activity{
 		
         try {
     		//测试服务器所在的项目URL
-            /*String SERVER_URL = "http://192.168.14.200:8001/tdface/door";
+            String SERVER_URL = "http://192.168.14.149:8111/tdface/door";
             HttpPost postRequest = new HttpPost(SERVER_URL);
             
             //构造请求的json串
@@ -523,9 +631,9 @@ public class CameraActivity extends Activity{
 	        
 	        Log.i("dengying", "openDoor,resCode = " + resCode); //获取响应码  
 	        Log.i("dengying", "openDoor,result = " + result);//获取服务器响应内容
-            */	    
+              
         	
-	        String result = "ok";
+	        //String result = "ok";
 			Message m = mMainHandler.obtainMessage();
 			m.what = EventUtil.OPEN_DOOR;
 			m.obj = result;

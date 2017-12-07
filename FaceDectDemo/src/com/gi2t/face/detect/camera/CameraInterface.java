@@ -98,10 +98,15 @@ public class CameraInterface {
 			CamParaUtil.getInstance().printSupportPreviewSize(mParams);
 			//…Ë÷√PreviewSize∫ÕPictureSize
 			Size pictureSize = CamParaUtil.getInstance().getPropPictureSize(mParams.getSupportedPictureSizes(),previewRate, 800);
-			mParams.setPictureSize(pictureSize.width, pictureSize.height);
+			//mParams.setPictureSize(pictureSize.width, pictureSize.height);
+			mParams.setPictureSize(1280, 720);
 			Size previewSize = CamParaUtil.getInstance().getPropPreviewSize(mParams.getSupportedPreviewSizes(), previewRate, 800);
-			mParams.setPreviewSize(previewSize.width, previewSize.height);
-
+			//mParams.setPreviewSize(previewSize.width, previewSize.height);
+			mParams.setPreviewSize(864, 480);
+			
+			Log.i("dengying", "CameraInterface.java doStartPreview pictureSize:width="+pictureSize.width+",height="+pictureSize.height);
+			Log.i("dengying", "CameraInterface.java doStartPreview previewSize:width="+previewSize.width+",height="+previewSize.height);
+			
 			mCamera.setDisplayOrientation(90);
 
 			CamParaUtil.getInstance().printSupportFocusMode(mParams);

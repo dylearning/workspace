@@ -1,31 +1,25 @@
 package com.baidu.ai.aip.demo;
 
-import java.net.URLEncoder;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.util.Log;
 
 import com.baidu.ai.aip.utils.Base64Util;
 import com.baidu.ai.aip.utils.FileUtil;
 import com.baidu.ai.aip.utils.HttpUtil;
-import com.gi2t.face.detect.activity.CameraActivity;
-import com.gi2t.face.detect.util.PropertyUtil;
+
+import java.net.URLEncoder;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 
 /**
-* 人脸注册
+* 人脸查找——识别
 */
-public class FaceAdd {
+public class FaceIdentify {
 
 	private static String baiduToken;
 	private static String baiduResult;
 	private static String scoreResult;
-	
-	private static int uid = 1;
 	
     /**
     * 重要提示代码中所需工具类
@@ -36,14 +30,14 @@ public class FaceAdd {
     * https://ai.baidu.com/file/470B3ACCA3FE43788B5A963BF0B625F3
     * 下载
     */
-    public static boolean add(String filePath) {
-    	boolean ret = false;
+    public static String identify(String filePath) {
+    	String result = "";
     	
 		baiduToken = AuthService.getAuth();
-		Log.e("dengying", "FaceAdd,baiduToken=" + baiduToken);
+		Log.e("dengying", "FaceIdentify,baiduToken=" + baiduToken);
     	
         // 请求url
-        String url = "https://aip.baidubce.com/rest/2.0/face/v2/faceset/user/add";
+        String url = "https://aip.baidubce.com/rest/2.0/face/v2/identify";
         try {
             // 本地文件路径
             //String filePath = "[本地文件路径]";
@@ -55,65 +49,63 @@ public class FaceAdd {
             //byte[] imgData2 = FileUtil.readFileByBytes(filePath2);
             //String imgStr2 = Base64Util.encode(imgData2);
             //String imgParam2 = URLEncoder.encode(imgStr2, "UTF-8");
-            
-            uid = Integer.parseInt(PropertyUtil.get("gi2t.face.detect.uid", "1")) ;
-            
-            String param = "uid=" + uid + "&user_info=" + "新注册用户"+ uid + "&group_id=" + "test_group_2" + "&images=" + imgParam /*+ "," + imgParam2*/;
+
+            String param = "group_id=" + "test_group_2" + "&user_top_num=" + "1" + "&face_top_num=" + "1" + "&images=" + imgParam /*+ "," + imgParam2*/;
 
             // 注意这里仅为了简化编码每一次请求都去获取access_token，线上环境access_token有过期时间， 客户端可自行缓存，过期后重新获取。
             String accessToken = baiduToken;//"[调用鉴权接口获取的token]";
 
-            String result = HttpUtil.post(url, accessToken, param);
-            System.out.println(result);
+            result = HttpUtil.post(url, accessToken, param);
             
             //返回示例
-	        // 注册成功
-	        //{
-	        //    "log_id": 73473737,
-	        //}
-	        // 注册发生错误
-	        //{
-	        //  "error_code": 216616,
-	        //  "log_id": 674786177,
-	        //  "error_msg": "image exist"
-	        //}
+            //{
+            //    "log_id": 73473737,
+            //    "result_num":1,
+            //    "result": [
+            //        {
+            //            "group_id" : "test1",
+            //            "uid": "u333333",
+            //            "user_info": "Test User",
+            //            "scores": [
+            //                    99.3,
+            //                    83.4
+            //            ]
+            //        }
+            //    ]
+            //}
             
-            Log.e("dengying","FaceAdd result="+result);
+            //{"error_code":216618,"error_msg":"no user in group","log_id":3975955222120618}
             
-            return getAddResult(result);
+            Log.e("dengying","FaceIdentify result="+result);
             
+            //result = getIdentifyResult(result);
+            
+            return result;
         } catch (Exception e) {
             e.printStackTrace();
-            Log.e("dengying","FaceAdd Exception="+e.toString());
         }
-        return ret;
+        return null;
     }
-    
-    
-	private static boolean getAddResult(String s){
-		boolean ret = true;
-		//uid = 0;
+
+	private static String getIdentifyResult(String s){
+		String result = "";
+		
 		try {
 			JSONObject root = new JSONObject(s);
 	        
-			String error_code = root.getString("error_code");
+			result = root.getString("error_msg");
 			
-			if(error_code == null || error_code.equals("")){
-				ret = true;
-			}else{
-				ret = false;
-			}
 			
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			PropertyUtil.set("gi2t.face.detect.uid", String.valueOf(++uid));
+			
 			//ret = false;
 		}
 
-		Log.e("dengying","getAddResult ret="+ret);
+		Log.e("dengying","getAddResult ret="+result);
 		
-        return ret;
+        return result;
 	}
 
 }

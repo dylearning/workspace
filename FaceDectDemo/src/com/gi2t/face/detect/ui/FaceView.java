@@ -15,6 +15,7 @@ import android.graphics.drawable.Drawable;
 import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Face;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.widget.ImageView;
 
 public class FaceView extends ImageView {
@@ -67,6 +68,8 @@ public class FaceView extends ImageView {
             mFaceIndicator.setBounds(Math.round(mRect.left), Math.round(mRect.top),
                     Math.round(mRect.right), Math.round(mRect.bottom));
             mFaceIndicator.draw(canvas);
+            
+            //Log.e("dengying","FaceView,onDraw["+Math.round(mRect.left)+","+Math.round(mRect.top)+","+Math.round(mRect.right)+","+Math.round(mRect.bottom)+"]");
 //			canvas.drawRect(mRect, mLinePaint);
 		}
 		canvas.restore();

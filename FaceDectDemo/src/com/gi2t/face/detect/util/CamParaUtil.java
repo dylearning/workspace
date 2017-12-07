@@ -31,9 +31,10 @@ public class CamParaUtil {
 		int i = 0;
 		for(Size s:list){
 			if((s.width >= minWidth) && equalRate(s, th)){
-				Log.i(TAG, "PreviewSize:w = " + s.width + "h = " + s.height);
+				
 				break;
 			}
+			Log.i("dengying", "CamParaUtil.java,PreviewSize:w = " + s.width + ",h = " + s.height);
 			i++;
 		}
 		if(i == list.size()){
@@ -47,9 +48,10 @@ public class CamParaUtil {
 		int i = 0;
 		for(Size s:list){
 			if((s.width >= minWidth) && equalRate(s, th)){
-				Log.i(TAG, "PictureSize : w = " + s.width + "h = " + s.height);
+				
 				break;
 			}
+			Log.i("dengying", "CamParaUtil.java,PictureSize : w = " + s.width + ",h = " + s.height);
 			i++;
 		}
 		if(i == list.size()){
@@ -104,8 +106,7 @@ public class CamParaUtil {
 		List<Size> pictureSizes = params.getSupportedPictureSizes();
 		for(int i=0; i< pictureSizes.size(); i++){
 			Size size = pictureSizes.get(i);
-			Log.i(TAG, "pictureSizes:width = "+ size.width
-					+" height = " + size.height);
+			Log.i(TAG, "pictureSizes:width = "+ size.width +" height = " + size.height);
 		}
 	}
 	/**打印支持的聚焦模式

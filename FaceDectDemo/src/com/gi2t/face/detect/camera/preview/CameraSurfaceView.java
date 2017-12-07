@@ -29,7 +29,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 	public void surfaceCreated(SurfaceHolder holder) {
 		// TODO Auto-generated method stub
 		Log.i(TAG, "surfaceCreated...");
-		CameraInterface.getInstance().doOpenCamera(null, CameraInfo.CAMERA_FACING_BACK);//CAMERA_FACING_BACK
+		CameraInterface.getInstance().doOpenCamera(null, CameraInfo.CAMERA_FACING_FRONT);//CAMERA_FACING_BACK CAMERA_FACING_FRONT
 	}
 
 	@Override
