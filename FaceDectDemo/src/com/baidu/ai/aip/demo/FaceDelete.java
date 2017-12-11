@@ -29,7 +29,7 @@ public class FaceDelete {
     * https://ai.baidu.com/file/470B3ACCA3FE43788B5A963BF0B625F3
     * 下载
     */
-    public static boolean delete() {
+    public static boolean delete(int id) {
     	boolean ret = false;
     	
 		baiduToken = AuthService.getAuth();
@@ -38,7 +38,7 @@ public class FaceDelete {
         // 请求url
         String url = "https://aip.baidubce.com/rest/2.0/face/v2/faceset/user/delete";
         try {
-            String param = "uid=" + "1";
+            String param = "uid=" + id;
 
             // 注意这里仅为了简化编码每一次请求都去获取access_token，线上环境access_token有过期时间， 客户端可自行缓存，过期后重新获取。
             String accessToken = baiduToken;//"[调用鉴权接口获取的token]";

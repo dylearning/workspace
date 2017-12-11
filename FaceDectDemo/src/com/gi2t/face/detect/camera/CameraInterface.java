@@ -3,6 +3,7 @@ package com.gi2t.face.detect.camera;
 import java.io.IOException;
 import java.util.List;
 
+import com.gi2t.face.detect.ui.FaceView;
 import com.gi2t.face.detect.util.CamParaUtil;
 import com.gi2t.face.detect.util.EventUtil;
 import com.gi2t.face.detect.util.FileUtil;
@@ -24,7 +25,7 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 
 public class CameraInterface {
-	private static final String TAG = "YanZi";
+	private static final String TAG = "CameraInterface";
 	
 	private Context mContext;
 	private Handler mHander;
@@ -93,17 +94,18 @@ public class CameraInterface {
 		if(mCamera != null){
 
 			mParams = mCamera.getParameters();
-			mParams.setPictureFormat(PixelFormat.JPEG);//设置拍照后存储的图片格式
+			mParams.setPictureFormat(PixelFormat.RGB_565);//PixelFormat.JPEG//设置拍照后存储的图片格式
 			CamParaUtil.getInstance().printSupportPictureSize(mParams);
 			CamParaUtil.getInstance().printSupportPreviewSize(mParams);
 			//设置PreviewSize和PictureSize
 			Size pictureSize = CamParaUtil.getInstance().getPropPictureSize(mParams.getSupportedPictureSizes(),previewRate, 800);
 			//mParams.setPictureSize(pictureSize.width, pictureSize.height);
+			//mParams.setPictureSize(1280, 720);
 			mParams.setPictureSize(1280, 720);
 			Size previewSize = CamParaUtil.getInstance().getPropPreviewSize(mParams.getSupportedPreviewSizes(), previewRate, 800);
 			//mParams.setPreviewSize(previewSize.width, previewSize.height);
-			mParams.setPreviewSize(864, 480);
-			
+			//mParams.setPreviewSize(864, 480);
+			mParams.setPreviewSize(1280, 720);
 			Log.i("dengying", "CameraInterface.java doStartPreview pictureSize:width="+pictureSize.width+",height="+pictureSize.height);
 			Log.i("dengying", "CameraInterface.java doStartPreview previewSize:width="+previewSize.width+",height="+previewSize.height);
 			
@@ -216,6 +218,17 @@ public class CameraInterface {
 				//设置FOCUS_MODE_CONTINUOUS_VIDEO)之后，myParam.set("rotation", 90)失效。
 				//图片竟然不能旋转了，故这里要旋转下
 				Bitmap rotaBitmap = ImageUtil.getRotateBitmap(b, 270.0f);
+				
+				/*int x = FaceView.mRectLeft;
+				int y = FaceView.mRectTop;
+				int width = (FaceView.mRectRight - FaceView.mRectLeft);
+				int height = (FaceView.mRectBottom - FaceView.mRectTop);
+				
+				Log.i("dengying", "rotaBitmap:height="+rotaBitmap.getHeight()+",width="+rotaBitmap.getWidth()+",x="+x+",y="+y);
+				
+				Bitmap rectBitmap = Bitmap.createBitmap(rotaBitmap, x, y, width, height);//截取
+				String mFileName = FileUtil.saveBitmap(rectBitmap, mContext);*/
+				
 				String mFileName = FileUtil.saveBitmap(rotaBitmap, mContext);
 				
 				Log.i("dengying", "save picture!!!");

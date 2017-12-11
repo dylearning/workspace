@@ -6,7 +6,7 @@
     android:layout_alignParentBottom="true"
     android:background="@drawable/bottom_bg" >
 
-    <LinearLayout
+   <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_centerVertical="true"
@@ -16,11 +16,12 @@
         <!-- center fitXY centerInside -->
 
         <ImageView
-            android:id="@+id/img_face_1"
+            android:id="@+id/img_face"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="@drawable/img_border"
+            android:src="@drawable/default_face"
             android:scaleType="fitXY" />
 
         <LinearLayout
@@ -35,7 +36,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="个人信息："
-                android:textColor="#F00" />
+                android:textColor="#FFFFFF" />
 
             <TextView
                 android:id="@+id/txt_score"
@@ -50,18 +51,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=""
-                android:textColor="#F00" />
+                android:textColor="#FFFFFF" />
             
             <!-- 姓名：张三 \n性别：男  \n年龄：18 -->
         </LinearLayout>
-        <!-- android:background="@drawable/img_border" -->
 
-        <ImageView
-            android:id="@+id/img_face_2"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:scaleType="fitXY"
-            android:visibility="gone" />
     </LinearLayout>
 
 </RelativeLayout>

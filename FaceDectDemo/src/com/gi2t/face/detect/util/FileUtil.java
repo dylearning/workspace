@@ -31,7 +31,9 @@ public class FileUtil {
 			storagePath = parentPath.getAbsolutePath()+"/" + DST_FOLDER_NAME;
 			File f = new File(storagePath);
 			if(!f.exists()){
-				f.mkdir();
+				boolean ret =f.mkdirs();
+				
+				Log.i("dengying", "initPath mkdirs ret=" + ret);
 			}
 		}
 		return storagePath;

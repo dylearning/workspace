@@ -19,13 +19,19 @@ import android.util.Log;
 import android.widget.ImageView;
 
 public class FaceView extends ImageView {
-	private static final String TAG = "YanZi";
+	private static final String TAG = "FaceView";
 	private Context mContext;
 	private Paint mLinePaint;
 	private Face[] mFaces;
 	private Matrix mMatrix = new Matrix();
 	private RectF mRect = new RectF();
 	private Drawable mFaceIndicator = null;
+	
+	public static int mRectLeft=0;
+	public static int mRectTop=0;
+	public static int mRectRight=0;
+	public static int mRectBottom=0;
+	
 	public FaceView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		// TODO Auto-generated constructor stub
@@ -62,11 +68,18 @@ public class FaceView extends ImageView {
 		canvas.save();
 		mMatrix.postRotate(0); //Matrix.postRotate默认是顺时针
 		canvas.rotate(-0);   //Canvas.rotate()默认是逆时针 
-		for(int i = 0; i< mFaces.length; i++){
+		
+		//只识别一个
+		for(int i = 0; i< 1;/*mFaces.length*/ i++){
 			mRect.set(mFaces[i].rect);
 			mMatrix.mapRect(mRect);
-            mFaceIndicator.setBounds(Math.round(mRect.left), Math.round(mRect.top),
-                    Math.round(mRect.right), Math.round(mRect.bottom));
+			
+            mRectLeft = Math.round(mRect.left);
+            mRectTop = Math.round(mRect.top);
+            mRectRight = Math.round(mRect.right);
+            mRectBottom = Math.round(mRect.bottom);
+			
+            mFaceIndicator.setBounds(mRectLeft, mRectTop,mRectRight,mRectBottom);
             mFaceIndicator.draw(canvas);
             
             //Log.e("dengying","FaceView,onDraw["+Math.round(mRect.left)+","+Math.round(mRect.top)+","+Math.round(mRect.right)+","+Math.round(mRect.bottom)+"]");

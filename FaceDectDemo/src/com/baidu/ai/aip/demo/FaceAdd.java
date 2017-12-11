@@ -36,8 +36,8 @@ public class FaceAdd {
     * https://ai.baidu.com/file/470B3ACCA3FE43788B5A963BF0B625F3
     * 下载
     */
-    public static boolean add(String filePath) {
-    	boolean ret = false;
+    public static int add(String filePath) {
+    	int ret = -1;
     	
 		baiduToken = AuthService.getAuth();
 		Log.e("dengying", "FaceAdd,baiduToken=" + baiduToken);
@@ -60,6 +60,16 @@ public class FaceAdd {
             
             String param = "uid=" + uid + "&user_info=" + "新注册用户"+ uid + "&group_id=" + "test_group_2" + "&images=" + imgParam /*+ "," + imgParam2*/;
 
+            if(filePath.equals("/storage/emulated/0/PlayCamera/dengying.jpg")){
+            	param = "uid=" + uid + "&user_info=" + "邓迎"+ 1 + "&group_id=" + "test_group_2" + "&images=" + imgParam;
+            }else if(filePath.equals("/storage/emulated/0/PlayCamera/zhanglie.jpg")){
+            	param = "uid=" + uid + "&user_info=" + "张列"+ 2 + "&group_id=" + "test_group_2" + "&images=" + imgParam;
+            }if(filePath.equals("/storage/emulated/0/PlayCamera/chenqigang.jpg")){
+            	param = "uid=" + uid + "&user_info=" + "陈齐刚"+ 3 + "&group_id=" + "test_group_2" + "&images=" + imgParam;
+            }if(filePath.equals("/storage/emulated/0/PlayCamera/leidongliang.jpg")){
+            	param = "uid=" + uid + "&user_info=" + "雷东亮"+ 4 + "&group_id=" + "test_group_2" + "&images=" + imgParam;
+            }
+            
             // 注意这里仅为了简化编码每一次请求都去获取access_token，线上环境access_token有过期时间， 客户端可自行缓存，过期后重新获取。
             String accessToken = baiduToken;//"[调用鉴权接口获取的token]";
 
@@ -90,28 +100,29 @@ public class FaceAdd {
     }
     
     
-	private static boolean getAddResult(String s){
-		boolean ret = true;
-		//uid = 0;
+	private static int getAddResult(String s){
+		int ret = -1;
+
 		try {
 			JSONObject root = new JSONObject(s);
 	        
 			String error_code = root.getString("error_code");
 			
 			if(error_code == null || error_code.equals("")){
-				ret = true;
+				//ret = uid;
 			}else{
-				ret = false;
+				ret = -1;
 			}
 			
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			
+			ret = uid;
 			PropertyUtil.set("gi2t.face.detect.uid", String.valueOf(++uid));
-			//ret = false;
 		}
 
-		Log.e("dengying","getAddResult ret="+ret);
+		Log.e("dengying","getAddResult uid="+ret);
 		
         return ret;
 	}

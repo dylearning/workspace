@@ -10,7 +10,7 @@ public class EventUtil {
 	public static final int BAIDU_FACE_IDENTIFY = 5;
 	public static final int BAIDU_FACE_DELETE = 6;
 	public static final int BAIDU_FACE_MATCH = 7;
-	public static final int BAIDU_FACE_WAIT = 8;
+	public static final int MESSAGE_SHOW = 8;
 	
 	public static final int OPEN_DOOR = 9;
 	public static final int FACE_TAKE_PICTURE = 10;

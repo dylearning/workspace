@@ -9,7 +9,7 @@ import android.hardware.Camera.Size;
 import android.util.Log;
 
 public class CamParaUtil {
-	private static final String TAG = "yanzi";
+	private static final String TAG = "CamParaUtil";
 	private CameraSizeComparator sizeComparator = new CameraSizeComparator();
 	private static CamParaUtil myCamPara = null;
 	private CamParaUtil(){
@@ -34,7 +34,7 @@ public class CamParaUtil {
 				
 				break;
 			}
-			Log.i("dengying", "CamParaUtil.java,PreviewSize:w = " + s.width + ",h = " + s.height);
+			//Log.i("dengying", "CamParaUtil.java,PreviewSize:w = " + s.width + ",h = " + s.height);
 			i++;
 		}
 		if(i == list.size()){
@@ -51,7 +51,7 @@ public class CamParaUtil {
 				
 				break;
 			}
-			Log.i("dengying", "CamParaUtil.java,PictureSize : w = " + s.width + ",h = " + s.height);
+			//Log.i("dengying", "CamParaUtil.java,PictureSize : w = " + s.width + ",h = " + s.height);
 			i++;
 		}
 		if(i == list.size()){
@@ -94,9 +94,8 @@ public class CamParaUtil {
 		List<Size> previewSizes = params.getSupportedPreviewSizes();
 		for(int i=0; i< previewSizes.size(); i++){
 			Size size = previewSizes.get(i);
-			Log.i(TAG, "previewSizes:width = "+size.width+" height = "+size.height);
+			Log.i("dengying", "previewSizes:width = "+size.width+" height = "+size.height);
 		}
-	
 	}
 
 	/**打印支持的pictureSizes
@@ -106,7 +105,7 @@ public class CamParaUtil {
 		List<Size> pictureSizes = params.getSupportedPictureSizes();
 		for(int i=0; i< pictureSizes.size(); i++){
 			Size size = pictureSizes.get(i);
-			Log.i(TAG, "pictureSizes:width = "+ size.width +" height = " + size.height);
+			Log.i("dengying", "pictureSizes:width = "+ size.width +" height = " + size.height);
 		}
 	}
 	/**打印支持的聚焦模式
