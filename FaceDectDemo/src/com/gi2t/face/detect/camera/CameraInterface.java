@@ -99,24 +99,24 @@ public class CameraInterface {
 			CamParaUtil.getInstance().printSupportPreviewSize(mParams);
 			//设置PreviewSize和PictureSize
 			Size pictureSize = CamParaUtil.getInstance().getPropPictureSize(mParams.getSupportedPictureSizes(),previewRate, 800);
-			//mParams.setPictureSize(pictureSize.width, pictureSize.height);
+			mParams.setPictureSize(pictureSize.width, pictureSize.height);
 			//mParams.setPictureSize(1280, 720);
-			mParams.setPictureSize(1280, 720);
+			//mParams.setPictureSize(1280, 720);
 			Size previewSize = CamParaUtil.getInstance().getPropPreviewSize(mParams.getSupportedPreviewSizes(), previewRate, 800);
-			//mParams.setPreviewSize(previewSize.width, previewSize.height);
+			mParams.setPreviewSize(previewSize.width, previewSize.height);
 			//mParams.setPreviewSize(864, 480);
-			mParams.setPreviewSize(1280, 720);
+			//mParams.setPreviewSize(1280, 720);
 			Log.i("dengying", "CameraInterface.java doStartPreview pictureSize:width="+pictureSize.width+",height="+pictureSize.height);
 			Log.i("dengying", "CameraInterface.java doStartPreview previewSize:width="+previewSize.width+",height="+previewSize.height);
 			
 			mCamera.setDisplayOrientation(90);
 
-			CamParaUtil.getInstance().printSupportFocusMode(mParams);
+			/*CamParaUtil.getInstance().printSupportFocusMode(mParams);
 			List<String> focusModes = mParams.getSupportedFocusModes();
 			if(focusModes.contains("continuous-video")){
 				mParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-			}
-			mCamera.setParameters(mParams);	
+			}*/
+			//mCamera.setParameters(mParams);
 
 			try {
 				mCamera.setPreviewDisplay(holder);
@@ -124,16 +124,16 @@ public class CameraInterface {
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				
+				Log.i("dengying", "doStartPreview e="+e.toString());
 			}
 
 			isPreviewing = true;
 			mPreviwRate = previewRate;
 
 			mParams = mCamera.getParameters(); //重新get一次
-			Log.i(TAG, "最终设置:PreviewSize--With = " + mParams.getPreviewSize().width
-					+ "Height = " + mParams.getPreviewSize().height);
-			Log.i(TAG, "最终设置:PictureSize--With = " + mParams.getPictureSize().width
-					+ "Height = " + mParams.getPictureSize().height);
+			Log.i(TAG, "最终设置:PreviewSize--With = " + mParams.getPreviewSize().width + "Height = " + mParams.getPreviewSize().height);
+			Log.i(TAG, "最终设置:PictureSize--With = " + mParams.getPictureSize().width + "Height = " + mParams.getPictureSize().height);
 		}
 	}
 	/**
@@ -147,7 +147,7 @@ public class CameraInterface {
 			isPreviewing = false; 
 			mPreviwRate = -1f;
 			mCamera.release();
-			mCamera = null;     
+			mCamera = null;
 		}
 	}
 	/**

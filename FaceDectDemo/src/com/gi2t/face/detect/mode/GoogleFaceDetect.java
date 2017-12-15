@@ -22,9 +22,12 @@ public class GoogleFaceDetect implements FaceDetectionListener {
 	public void onFaceDetection(Face[] faces, Camera camera) {
 		// TODO Auto-generated method stub
 		
-		Log.i(TAG, "onFaceDetection...");
+		//Log.i("dengying", "onFaceDetection...");
+		
 		if(faces != null){
 		
+			//Log.i("dengying", "onFaceDetection faces != null");
+			
 			Message m = mHander.obtainMessage();
 			m.what = EventUtil.UPDATE_FACE_RECT;
 			m.obj = faces;

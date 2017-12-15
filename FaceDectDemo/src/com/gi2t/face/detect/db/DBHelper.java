@@ -125,7 +125,7 @@ public class DBHelper extends SQLiteOpenHelper {
 			Log.d("AAAAA", "update table failure");
 			return false;
 		}
-	}   
+	}
 
 	@Override
 	public void close() {
@@ -138,5 +138,4 @@ public class DBHelper extends SQLiteOpenHelper {
 		db.execSQL("DROP TABLE IF EXISTS diary");
 		onCreate(db);
 	}
-
 }

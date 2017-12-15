@@ -12,6 +12,7 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.ContentValues;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
@@ -21,6 +22,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.Display;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -44,6 +47,7 @@ import com.gi2t.face.detect.ui.FaceView;
 import com.gi2t.face.detect.util.DisplayUtil;
 import com.gi2t.face.detect.util.EventUtil;
 import com.gi2t.face.detect.util.PropertyUtil;
+import com.gi2t.tdmec.MyClientThread;
 
 public class CameraActivity extends Activity{
 
@@ -73,6 +77,8 @@ public class CameraActivity extends Activity{
 	private FaceIdentifyThread mFaceIdentifyThread;
 	private FaceAddThread mFaceAddThread;
 	private OpenDoorThread mOpenDoorThread;
+	
+	MyClientThread myClientThread; //netty,socket,tdmec 线程
 	
 	boolean isCleanData = false;//true false
 	
@@ -108,6 +114,10 @@ public class CameraActivity extends Activity{
 		}else {
 			mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 2000);
 		}
+		
+		//开启 netty,socket,tdmec 线程
+		myClientThread = new MyClientThread();
+		myClientThread.start();
 	}
 
 	@Override
@@ -162,7 +172,7 @@ public class CameraActivity extends Activity{
 				
 				if(faces != null && faces.length >0 && isTakePicture){
 					takePicture();
-					Toast.makeText(CameraActivity.this, "检测到人脸，拍照！", Toast.LENGTH_SHORT).show();
+					showMessage("检测到人脸，拍照！");
 					
 					isTakePicture = false;
 					Log.e("dengying","takePicture");
@@ -216,14 +226,15 @@ public class CameraActivity extends Activity{
 				}else{
 					s_delete_result="人脸数据库删除失败！";
 				}
-				Toast.makeText(CameraActivity.this, s_delete_result, Toast.LENGTH_SHORT).show();
+
+				showMessage(s_delete_result);
 				
 				break;					
 				
 			case EventUtil.BAIDU_FACE_VERIFY:
-				if (mFaceVerifyThread != null) {  
-					mFaceVerifyThread.interrupt();  
-					mFaceVerifyThread = null;  
+				if (mFaceVerifyThread != null) {
+					mFaceVerifyThread.interrupt();
+					mFaceVerifyThread = null;
 			     } 
 				
 				int verify_result =  (int)Double.parseDouble((String) msg.obj);
@@ -239,9 +250,9 @@ public class CameraActivity extends Activity{
 					s_verify_result = "人脸验证失败，请重新验证！";
 				}
 				
-				Toast.makeText(CameraActivity.this, s_verify_result, Toast.LENGTH_SHORT).show();
+				showMessage(s_verify_result);
 				
-				break;					
+				break;
 				
 			case EventUtil.BAIDU_FACE_IDENTIFY:
 				if (mFaceIdentifyThread != null) {  
@@ -258,7 +269,7 @@ public class CameraActivity extends Activity{
 				String user_info="";
 				String scores="";
 				
-				String s_identify_message = "";
+				String s_identify_message="";
 				
 				int score = 0;
 				int i_uid =-1;
@@ -336,7 +347,7 @@ public class CameraActivity extends Activity{
 					s_identify_message="人脸没有没有找到，重新开始检测！";
 					
 					img_face.setImageResource(R.drawable.default_face);
-					mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 3000);
+					mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 2000);
 				}else if(score < 80){
 					s_identify_message = "人脸没有找到合适的人脸库，请重新验证！";
 					
@@ -355,15 +366,16 @@ public class CameraActivity extends Activity{
 					txt_usrinfo.setText(user_info+"\nuid="+uid+"\nscore="+score);
 				}
 				
-				Toast.makeText(CameraActivity.this, s_identify_message, Toast.LENGTH_SHORT).show();
+				showMessage(s_identify_message);
+
 				break;
 				
 			case EventUtil.BAIDU_FACE_ADD:
 				
-				if (mFaceAddThread != null) {  
-					mFaceAddThread.interrupt();  
-					mFaceAddThread = null;  
-			     } 
+				if (mFaceAddThread != null){
+					mFaceAddThread.interrupt();
+					mFaceAddThread = null;
+			     }
 				
 				int add_uid = (Integer) msg.obj;
 				String s_add_result = "";
@@ -385,50 +397,51 @@ public class CameraActivity extends Activity{
 					s_add_result="人脸注册失败！";
 				}
 				
-				Toast.makeText(CameraActivity.this, s_add_result, Toast.LENGTH_SHORT).show();
+				showMessage(s_add_result);
 				
-				mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 3000);
+				mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 2000);
 				
-				break;										
+				break;
 				
 			case EventUtil.MESSAGE_SHOW:
-
-				Toast.makeText(CameraActivity.this, (String) msg.obj, Toast.LENGTH_SHORT).show();
+				showMessage((String) msg.obj);
 				
-				break;					
+				break;
 				
 			case EventUtil.BAIDU_FACE_MATCH:
 				int scoreResult =  (int)Double.parseDouble((String) msg.obj);
 				
 				Log.e("dengying","UPDATE_BAIDU_SCORE scoreResult="+scoreResult);
+					
+				showMessage("人脸对比，分数："+scoreResult);
 				
-				Toast.makeText(CameraActivity.this, "人脸对比，分数："+scoreResult, Toast.LENGTH_SHORT).show();
 				txt_score.setText("Score:"+scoreResult);
 				
-				break;	
+				break;
 				
 			case EventUtil.FACE_TAKE_PICTURE:
 				isTakePicture = true;
 				break;
 				
 			case EventUtil.OPEN_DOOR:
-				if (mOpenDoorThread != null) {  
-					mOpenDoorThread.interrupt();  
-					mOpenDoorThread = null;  
-			     } 
+				if (mOpenDoorThread != null) {
+					mOpenDoorThread.interrupt();
+					mOpenDoorThread = null;
+			     }
 				
 				String open_door_ret =  (String) msg.obj;
 				
 				if(open_door_ret.equals("OK")){
-					Toast.makeText(CameraActivity.this, "开门成功，开始下一个验证", Toast.LENGTH_SHORT).show();
+					showMessage("开门成功，开始下一个验证");
 					
-					mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 3000);
+					mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 2000);
 				}else{
-					Toast.makeText(CameraActivity.this, "开门失败，请检查设备", Toast.LENGTH_SHORT).show();
-					mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 3000);
+					showMessage("开门失败，请检查设备");
+					
+					mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 2000);
 				}
 				
-				break;				
+				break;
 			}
 			super.handleMessage(msg);
 		}
@@ -452,6 +465,9 @@ public class CameraActivity extends Activity{
 	}
 	
 	private void startGoogleFaceDetect(){
+		
+		Log.e("dengying","startGoogleFaceDetect");
+		
 		Camera.Parameters params = mCameraInterface.getCameraParams();
 		if(params != null && params.getMaxNumDetectedFaces() > 0){
 			if(faceView != null){
@@ -475,52 +491,17 @@ public class CameraActivity extends Activity{
 		
 		isGoogleFaceDetect = false;
 	}
-
 	
-	@Override
-	protected void onDestroy() {
-		Log.e("dengying","onDestroy");
-		
-		mMainHandler.removeMessages(EventUtil.UPDATE_FACE_RECT);
-		mMainHandler.removeMessages(EventUtil.CAMERA_HAS_STARTED_PREVIEW);
-		mMainHandler.removeMessages(EventUtil.TAKE_PICTURE_FILENAME);
-		mMainHandler.removeMessages(EventUtil.BAIDU_FACE_ADD);
-		mMainHandler.removeMessages(EventUtil.BAIDU_FACE_VERIFY);
-		mMainHandler.removeMessages(EventUtil.BAIDU_FACE_DELETE);
-		mMainHandler.removeMessages(EventUtil.BAIDU_FACE_MATCH);
-		mMainHandler.removeMessages(EventUtil.MESSAGE_SHOW);
-		mMainHandler.removeMessages(EventUtil.OPEN_DOOR);
-		mMainHandler.removeMessages(EventUtil.FACE_TAKE_PICTURE);
-		
-		if (mFaceDeleteThread != null) {  
-			mFaceDeleteThread.interrupt();  
-			mFaceDeleteThread = null;  
-	     }  
-		
-		if (mFaceAddThread != null) {  
-			mFaceAddThread.interrupt();  
-			mFaceAddThread = null;  
-	     }  
-		
-		if (mFaceVerifyThread != null) {  
-			mFaceVerifyThread.interrupt();  
-			mFaceVerifyThread = null;  
-	     }
-		
-		if (mOpenDoorThread != null) {  
-			mOpenDoorThread.interrupt();  
-			mOpenDoorThread = null;  
-	     }
-		
-		stopGoogleFaceDetect();
-		mCameraInterface.doStopCamera();
-		
-		android.os.Process.killProcess(android.os.Process.myPid()); 
-		
-		// TODO Auto-generated method stub
-		super.onDestroy();
+	private void showMessage(String message){
+        Display display = getWindowManager().getDefaultDisplay();
+        
+        // 获取屏幕高度
+        int height = display.getHeight();
+        Toast toast = Toast.makeText(this, message, Toast.LENGTH_SHORT);
+        
+        toast.setGravity(Gravity.TOP, 0,0);
+        toast.show();
 	}
-	
 	
 	/* 人脸数据库删除*/
 	class FaceDeleteThread extends Thread {
@@ -528,9 +509,8 @@ public class CameraActivity extends Activity{
 		public void run() {
 			boolean ret =false;
 			
-			for(int i=1;i<11;i++){
-				ret = FaceDelete.delete(i);
-			}
+			int i=1;
+			ret = FaceDelete.delete(i);
 			
 			Message m = mMainHandler.obtainMessage();
 			m.what = EventUtil.BAIDU_FACE_DELETE;
@@ -565,18 +545,19 @@ public class CameraActivity extends Activity{
 			helper.delAll();
 			
 			//删除百度数据库
-			for(int i=1;i<11;i++){
+			for(int i=1;i<6;i++){
 				boolean ret = FaceDelete.delete(i);
 			}
 			
-			//添加百度默认数据
-			int add_result = FaceAdd.add("/storage/emulated/0/PlayCamera/dengying.jpg");
-			add_result = FaceAdd.add("/storage/emulated/0/PlayCamera/zhanglie.jpg");
-			add_result = FaceAdd.add("/storage/emulated/0/PlayCamera/chenqigang.jpg");
-			add_result = FaceAdd.add("/storage/emulated/0/PlayCamera/leidongliang.jpg");
+			//Context mContext = getApplicationContext();
+			
+			//int add_result = FaceAdd.add(mContext,"43098765308091","邓迎","男","/storage/emulated/0/PlayCamera/dengying.jpg");
+			//add_result = FaceAdd.add(mContext,"43098765308092","张列","男","/storage/emulated/0/PlayCamera/zhanglie.jpg");
+			//add_result = FaceAdd.add(mContext,"43098765308093","陈齐刚","男","/storage/emulated/0/PlayCamera/chenqigang.jpg");
+			//add_result = FaceAdd.add(mContext,"43098765308094","雷东亮","男","/storage/emulated/0/PlayCamera/leidongliang.jpg");
 			
 			//添加本地数据库数据
-            ContentValues values = new ContentValues();
+            /*ContentValues values = new ContentValues();
             values.put("uid", 1);
             values.put("picurl", "/storage/emulated/0/PlayCamera/dengying.jpg");
             boolean insert_ret =helper.insert(values);
@@ -598,7 +579,7 @@ public class CameraActivity extends Activity{
             values.put("uid", 4);
             values.put("picurl", "/storage/emulated/0/PlayCamera/leidongliang.jpg");
             insert_ret =helper.insert(values);
-            Log.e("dengying","ret="+insert_ret);
+            Log.e("dengying","ret="+insert_ret);*/
             
             Log.e("dengying","FaceCleanAddDataThread OK");
             
@@ -626,7 +607,6 @@ public class CameraActivity extends Activity{
 			m.sendToTarget();
 		}
 	}
-	
 	
 	/* 人脸识别*/
 	class FaceIdentifyThread extends Thread {
@@ -682,7 +662,7 @@ public class CameraActivity extends Activity{
         try {
     		//测试服务器所在的项目URL
             //String SERVER_URL = "http://192.168.14.149:8111/tdface/door";
-        	String SERVER_URL = "http://192.168.14.200:8111/tdface/door";
+        	/*String SERVER_URL = "http://192.168.14.200:8111/tdface/door";
             HttpPost postRequest = new HttpPost(SERVER_URL);
             
             //构造请求的json串
@@ -697,9 +677,9 @@ public class CameraActivity extends Activity{
 	        String result = EntityUtils.toString(response.getEntity(), "utf-8");
 	        
 	        Log.i("dengying", "openDoor,resCode = " + resCode); //获取响应码  
-	        Log.i("dengying", "openDoor,result = " + result);//获取服务器响应内容
+	        Log.i("dengying", "openDoor,result = " + result);//获取服务器响应内容*/
             
-	        //String result = "ok";
+	        String result = "OK";
 			Message m = mMainHandler.obtainMessage();
 			m.what = EventUtil.OPEN_DOOR;
 			m.obj = result;
@@ -715,6 +695,54 @@ public class CameraActivity extends Activity{
 			m.obj = e.toString();
 			m.sendToTarget();
 		}
-
+	}
+	
+	@Override
+	protected void onDestroy() {
+		Log.e("dengying","onDestroy");
+		
+		mMainHandler.removeMessages(EventUtil.UPDATE_FACE_RECT);
+		mMainHandler.removeMessages(EventUtil.CAMERA_HAS_STARTED_PREVIEW);
+		mMainHandler.removeMessages(EventUtil.TAKE_PICTURE_FILENAME);
+		mMainHandler.removeMessages(EventUtil.BAIDU_FACE_ADD);
+		mMainHandler.removeMessages(EventUtil.BAIDU_FACE_VERIFY);
+		mMainHandler.removeMessages(EventUtil.BAIDU_FACE_DELETE);
+		mMainHandler.removeMessages(EventUtil.BAIDU_FACE_MATCH);
+		mMainHandler.removeMessages(EventUtil.MESSAGE_SHOW);
+		mMainHandler.removeMessages(EventUtil.OPEN_DOOR);
+		mMainHandler.removeMessages(EventUtil.FACE_TAKE_PICTURE);
+		
+		if (mFaceDeleteThread != null) {  
+			mFaceDeleteThread.interrupt();  
+			mFaceDeleteThread = null;  
+	     }  
+		
+		if (mFaceAddThread != null) {  
+			mFaceAddThread.interrupt();  
+			mFaceAddThread = null;  
+	     }  
+		
+		if (mFaceVerifyThread != null) {  
+			mFaceVerifyThread.interrupt();  
+			mFaceVerifyThread = null;  
+	     }
+		
+		if (mOpenDoorThread != null) {  
+			mOpenDoorThread.interrupt();  
+			mOpenDoorThread = null;  
+	     }
+		
+		if (myClientThread != null) {  
+			myClientThread.interrupt();  
+			myClientThread = null;  
+	     }
+		
+		stopGoogleFaceDetect();
+		mCameraInterface.doStopCamera();
+		
+		android.os.Process.killProcess(android.os.Process.myPid()); 
+		
+		// TODO Auto-generated method stub
+		super.onDestroy();
 	}
 }

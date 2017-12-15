@@ -21,8 +21,6 @@ public class FileUtil {
 	private static   String storagePath = "";
 	private static final String DST_FOLDER_NAME = "PlayCamera";
 	
-	private static String preSaveFileName="";
-
 	/**初始化保存路径
 	 * @return
 	 */
@@ -67,27 +65,28 @@ public class FileUtil {
 
 		return mFileName;
 	}
-
 	
-	/**返回文件对比路径
-	 * @return
-	 */
-	public static String getCompFile1(){
-		if(storagePath.equals("")){
-			storagePath = parentPath.getAbsolutePath()+"/" + DST_FOLDER_NAME;
-		}
-		
-		return storagePath+"01.jpg";
-	}
+	//保存Bitmap到sdcard
+	public static boolean saveBitmap(Bitmap b,String name){
 
-	/**返回文件对比路径
-	 * @return
-	 */
-	public static String getCompFile2(){
-		if(storagePath.equals("")){
-			storagePath = parentPath.getAbsolutePath()+"/" + DST_FOLDER_NAME;
-		}
+		boolean ret = false;
 		
-		return storagePath+"02.jpg";
+		String path = initPath();
+
+		String jpegName = path + "/" + name +".jpg";
+		
+		try {
+			FileOutputStream fout = new FileOutputStream(jpegName);
+			BufferedOutputStream bos = new BufferedOutputStream(fout);
+			b.compress(Bitmap.CompressFormat.JPEG, 100, bos);
+			bos.flush();
+			bos.close();
+			
+			ret = true;	
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return ret;
 	}
 }

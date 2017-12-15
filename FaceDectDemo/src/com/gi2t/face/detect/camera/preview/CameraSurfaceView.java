@@ -33,8 +33,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 	}
 
 	@Override
-	public void surfaceChanged(SurfaceHolder holder, int format, int width,
-			int height) {
+	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 		// TODO Auto-generated method stub
 		Log.i(TAG, "surfaceChanged...");
 		CameraInterface.getInstance().doStartPreview(mSurfaceHolder, 1.333f);
@@ -46,6 +45,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 		Log.i(TAG, "surfaceDestroyed...");
 		CameraInterface.getInstance().doStopCamera();
 	}
+	
 	public SurfaceHolder getSurfaceHolder(){
 		return mSurfaceHolder;
 	}
