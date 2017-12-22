@@ -14,15 +14,23 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import android.util.Log;
+import android.view.Display;
+import android.view.Gravity;
+import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baidu.ai.aip.demo.FaceAdd;
+import com.baidu.ai.aip.demo.FaceDelete;
 import com.gi2t.face.detect.activity.MyApplication;
 import com.gi2t.face.detect.util.FileUtil;
 import com.gi2t.face.detect.util.ImageUtil;
 
 public class MyClientHandler extends SimpleChannelInboundHandler<TdmecMessage> {
+	
+	public static ChannelHandlerContext mChannelHandlerContext;
+	
+	private ScheduledExecutorService mScheduledExecutorService;
 	
 	private int hubId;
 
@@ -47,8 +55,12 @@ public class MyClientHandler extends SimpleChannelInboundHandler<TdmecMessage> {
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, TdmecMessage msg) throws Exception {
 
+		mChannelHandlerContext = ctx;
+		
 		//登陆成功，上报设备信息
 		if ((msg.getFid() & 0xff) == 0x02 && (msg.getCid() & 0xff) == 0x80) {
+			
+			Log.e("dengying", "channelRead0 upload devices info");
 			
 			//上报设备信息
     		ByteBuf byteBuf = Unpooled.buffer(1024);
@@ -69,7 +81,10 @@ public class MyClientHandler extends SimpleChannelInboundHandler<TdmecMessage> {
 				byte[] byteInfo = new byte[len];
 				bmByteBuf.readBytes(byteInfo);
 				String info = new String(byteInfo);
-				System.out.println("info:" + JSON.parseObject(info).toJSONString());
+				//System.out.println("info:" + JSON.parseObject(info).toJSONString());
+				
+				Log.e("dengying", "do face:info="+JSON.parseObject(info).toJSONString());
+				
 				short msgNo = ByteUtil.changeByte(bmByteBuf.readShort());// msgNo
 				// 类型
 				String type = JSON.parseObject(info).getString("type");
@@ -85,7 +100,7 @@ public class MyClientHandler extends SimpleChannelInboundHandler<TdmecMessage> {
 		        	String ID_Code =((JSONObject) JSON.parseObject(info).get("ID_Info")).getString("ID_Code");
 		        	String Name = ((JSONObject) JSON.parseObject(info).get("ID_Info")).getString("Name");
 		        	String Sex = ((JSONObject) JSON.parseObject(info).get("ID_Info")).getString("Sex");
-		        	
+		        		
 	        		if (photoMap.containsKey(deviceCode)) {
 		        		String temp = photoMap.get(deviceCode).getString("Photo2");
 		        		photo = temp + photo;
@@ -95,20 +110,22 @@ public class MyClientHandler extends SimpleChannelInboundHandler<TdmecMessage> {
 		        	}
 	        		
 	        		int uid = -1;
-	        		
+	        	        		
 	        		if (frameCnt == currentCnt) {
 	        			// 图片
-	        			Log.e("dengying", "ID_Code="+ID_Code+",Name="+Name+",Sex="+Sex);
+	        			Log.e("dengying", "do face:ID_Code="+ID_Code+",Name="+Name+",Sex="+Sex);
 	        			
-	        			Log.e("dengying", photoMap.get(deviceCode).getString("Photo2"));
+	        			//Log.e("dengying", photoMap.get(deviceCode).getString("Photo2"));
 	        			
 	        			boolean saveImag = FileUtil.saveBitmap(ImageUtil.stringtoBitmap(photoMap.get(deviceCode).getString("Photo2")), ID_Code);
 	        			
-	        			Log.e("dengying", "saveImag ="+saveImag);
+	        			Log.e("dengying", "do face:saveImag ="+saveImag);
+	        			
+	        			photoMap.remove(deviceCode);
 	        			
 	        			uid = FaceAdd.add(MyApplication.getContext(),ID_Code,Name,Sex,"/storage/emulated/0/PlayCamera/"+ID_Code+".jpg");
 	        		
-	        			Log.e("dengying", "FaceAdd.add uid ="+uid);
+	        			Log.e("dengying", "do face:FaceAdd.add uid ="+uid);
 	        		}
 	        		
 	        		ByteBuf byteBuf = Unpooled.buffer(1024);
@@ -137,7 +154,36 @@ public class MyClientHandler extends SimpleChannelInboundHandler<TdmecMessage> {
 					ctx.writeAndFlush(message);
 					byteBuf.release();
 	        	} else if ("1001".equals(type)) { // 取消布控
-	        		
+		        	String Person_Code = JSON.parseObject(info).getString("Person_Code");
+		        	String Person_ID = JSON.parseObject(info).getString("Person_ID");
+		        	String deviceCode = JSON.parseObject(info).getString("deviceCode");
+		        	
+		        	Log.e("dengying", "cancel Face:Person_Code="+Person_Code+",Person_ID="+Person_ID+",deviceCode="+deviceCode);
+		        	
+		        	boolean ret = FaceDelete.delete(Integer.parseInt(Person_ID));
+		        	
+	        		ByteBuf byteBuf = Unpooled.buffer(1024);
+					JSONObject json = new JSONObject();
+					JSONObject Result = new JSONObject();
+					
+					if(ret){
+						Result.put("ResultCode", 0);
+					}else{
+						Result.put("ResultCode", 1);
+					}
+					Result.put("ResultText", "");
+	
+					json.put("Result", Result);
+			
+					byteBuf.writeShort(ByteUtil.changeByte((short)json.toJSONString().getBytes().length)); //长度
+					byteBuf.writeBytes(json.toJSONString().getBytes());
+					byteBuf.writeShort(ByteUtil.changeByte(msgNo)); //msgNo
+					byte[] content = new byte[byteBuf.writerIndex()];
+					byteBuf.readBytes(content);
+					
+					TdmecMessage message = new TdmecMessage((byte)0X04, (byte) 0X80, content);
+					ctx.writeAndFlush(message);
+					byteBuf.release();
 	        	}
 				
 				// 释放bytebuf
@@ -179,7 +225,7 @@ public class MyClientHandler extends SimpleChannelInboundHandler<TdmecMessage> {
 			}
 		}
 	
-		Log.e("dengying","MyClientHandler channelRead0 msg=" + msg.toString()+",fid="+msg.getFid()+",cid="+msg.getCid());
+		//Log.e("dengying","MyClientHandler channelRead0 msg=" + msg.toString()+",fid="+msg.getFid()+",cid="+msg.getCid());
 	}
 
 	@Override
@@ -191,7 +237,11 @@ public class MyClientHandler extends SimpleChannelInboundHandler<TdmecMessage> {
 			
 		// 自定义心跳，每隔10秒向服务器发送心跳包
 		final ChannelHandlerContext mChannelHandlerContext = ctx;
-		ScheduledExecutorService mScheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+		if(mScheduledExecutorService == null){
+			mScheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+		}else{
+			mScheduledExecutorService.shutdown();
+		}
         mScheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {

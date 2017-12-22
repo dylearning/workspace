@@ -19,8 +19,6 @@
             android:layout_height="match_parent" />
     </FrameLayout>
 
-    <include layout="@layout/camera_top_panel" /> <!-- 顶部控制栏 -->
-
     <include layout="@layout/camera_bottom_panel" /> <!-- 底部控制栏 -->
 
 </RelativeLayout>

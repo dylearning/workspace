@@ -25,7 +25,6 @@ public class GoogleFaceDetect implements FaceDetectionListener {
 		//Log.i("dengying", "onFaceDetection...");
 		
 		if(faces != null){
-		
 			//Log.i("dengying", "onFaceDetection faces != null");
 			
 			Message m = mHander.obtainMessage();

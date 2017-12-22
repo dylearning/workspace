@@ -21,8 +21,10 @@ import android.hardware.Camera.ShutterCallback;
 import android.hardware.Camera.Size;
 import android.os.Handler;
 import android.os.Message;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.SurfaceHolder;
+import android.view.WindowManager;
 
 public class CameraInterface {
 	private static final String TAG = "CameraInterface";
@@ -99,15 +101,15 @@ public class CameraInterface {
 			CamParaUtil.getInstance().printSupportPreviewSize(mParams);
 			//设置PreviewSize和PictureSize
 			Size pictureSize = CamParaUtil.getInstance().getPropPictureSize(mParams.getSupportedPictureSizes(),previewRate, 800);
-			mParams.setPictureSize(pictureSize.width, pictureSize.height);
+			//mParams.setPictureSize(pictureSize.width, pictureSize.height);
 			//mParams.setPictureSize(1280, 720);
 			//mParams.setPictureSize(1280, 720);
 			Size previewSize = CamParaUtil.getInstance().getPropPreviewSize(mParams.getSupportedPreviewSizes(), previewRate, 800);
-			mParams.setPreviewSize(previewSize.width, previewSize.height);
+			//mParams.setPreviewSize(previewSize.width, previewSize.height);
 			//mParams.setPreviewSize(864, 480);
 			//mParams.setPreviewSize(1280, 720);
-			Log.i("dengying", "CameraInterface.java doStartPreview pictureSize:width="+pictureSize.width+",height="+pictureSize.height);
-			Log.i("dengying", "CameraInterface.java doStartPreview previewSize:width="+previewSize.width+",height="+previewSize.height);
+			//Log.i("dengying", "CameraInterface.java doStartPreview pictureSize:width="+pictureSize.width+",height="+pictureSize.height);
+			//Log.i("dengying", "CameraInterface.java doStartPreview previewSize:width="+previewSize.width+",height="+previewSize.height);
 			
 			mCamera.setDisplayOrientation(90);
 
@@ -132,8 +134,8 @@ public class CameraInterface {
 			mPreviwRate = previewRate;
 
 			mParams = mCamera.getParameters(); //重新get一次
-			Log.i(TAG, "最终设置:PreviewSize--With = " + mParams.getPreviewSize().width + "Height = " + mParams.getPreviewSize().height);
-			Log.i(TAG, "最终设置:PictureSize--With = " + mParams.getPictureSize().width + "Height = " + mParams.getPictureSize().height);
+			Log.i("dengying", "final:PreviewSize--With = " + mParams.getPreviewSize().width + "Height = " + mParams.getPreviewSize().height);
+			Log.i("dengying", "final:PictureSize--With = " + mParams.getPictureSize().width + "Height = " + mParams.getPictureSize().height);
 		}
 	}
 	/**
@@ -219,17 +221,21 @@ public class CameraInterface {
 				//图片竟然不能旋转了，故这里要旋转下
 				Bitmap rotaBitmap = ImageUtil.getRotateBitmap(b, 270.0f);
 				
-				/*int x = FaceView.mRectLeft;
+				String mFileName = FileUtil.saveBitmap(rotaBitmap, mContext);
+				
+				//截取图片 begin
+				/*Bitmap sizeBitmap = Bitmap.createScaledBitmap(rotaBitmap, 720, 1280, true);//1280x720 SurfaceView的size
+				
+				int x = FaceView.mRectLeft;
 				int y = FaceView.mRectTop;
 				int width = (FaceView.mRectRight - FaceView.mRectLeft);
 				int height = (FaceView.mRectBottom - FaceView.mRectTop);
 				
-				Log.i("dengying", "rotaBitmap:height="+rotaBitmap.getHeight()+",width="+rotaBitmap.getWidth()+",x="+x+",y="+y);
+				Log.i("dengying", "CameraInterface.java :Left="+x+",Top="+y+",Right="+FaceView.mRectRight+",Bottom="+FaceView.mRectBottom);
 				
-				Bitmap rectBitmap = Bitmap.createBitmap(rotaBitmap, x, y, width, height);//截取
-				String mFileName = FileUtil.saveBitmap(rectBitmap, mContext);*/
-				
-				String mFileName = FileUtil.saveBitmap(rotaBitmap, mContext);
+				Bitmap rectBitmap = Bitmap.createBitmap(sizeBitmap, x, y, width, height);
+				mFileName = FileUtil.saveBitmap(rectBitmap, mContext);*/
+				//截取图片 end 
 				
 				Log.i("dengying", "save picture!!!");
 				
@@ -240,6 +246,7 @@ public class CameraInterface {
 					m.sendToTarget();
 				}
 			}
+			
 			//再次进入预览
 			mCamera.startPreview();
 			isPreviewing = true;

@@ -57,6 +57,9 @@ public class FaceView extends ImageView {
 		if(mFaces == null || mFaces.length < 1){
 			return;
 		}
+		
+		//Log.e("dengying","FaceView,onDraw ["+Math.round(mFaces[0].rect.left)+","+Math.round(mFaces[0].rect.top)+","+Math.round(mFaces[0].rect.right)+","+Math.round(mFaces[0].rect.bottom)+"]");
+		
 		boolean isMirror = false;
 		int Id = CameraInterface.getInstance().getCameraId();
 		if(Id == CameraInfo.CAMERA_FACING_BACK){
@@ -80,7 +83,9 @@ public class FaceView extends ImageView {
             mRectBottom = Math.round(mRect.bottom);
 			
             mFaceIndicator.setBounds(mRectLeft, mRectTop,mRectRight,mRectBottom);
-            mFaceIndicator.draw(canvas);
+            
+            if(mRectBottom <900)//在固定区域识别才有效
+            	mFaceIndicator.draw(canvas);
             
             //Log.e("dengying","FaceView,onDraw["+Math.round(mRect.left)+","+Math.round(mRect.top)+","+Math.round(mRect.right)+","+Math.round(mRect.bottom)+"]");
 //			canvas.drawRect(mRect, mLinePaint);

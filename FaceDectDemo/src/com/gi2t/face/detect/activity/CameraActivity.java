@@ -1,5 +1,11 @@
 package com.gi2t.face.detect.activity;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -15,8 +21,11 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.Point;
+import android.graphics.RectF;
 import android.hardware.Camera;
+import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Face;
 import android.os.Bundle;
 import android.os.Handler;
@@ -46,14 +55,19 @@ import com.gi2t.face.detect.mode.GoogleFaceDetect;
 import com.gi2t.face.detect.ui.FaceView;
 import com.gi2t.face.detect.util.DisplayUtil;
 import com.gi2t.face.detect.util.EventUtil;
+import com.gi2t.face.detect.util.ImageUtil;
 import com.gi2t.face.detect.util.PropertyUtil;
+import com.gi2t.face.detect.util.Util;
+import com.gi2t.tdmec.ByteUtil;
+import com.gi2t.tdmec.MyClient;
+import com.gi2t.tdmec.MyClientHandler;
 import com.gi2t.tdmec.MyClientThread;
+import com.gi2t.tdmec.TdmecMessage;
 
 public class CameraActivity extends Activity{
 
 	private static final String TAG = "CameraActivity";
 	private CameraSurfaceView surfaceView = null;
-	private ImageButton switchBtn;
 	
 	private ImageView img_face;
 	private TextView txt_score;
@@ -85,28 +99,16 @@ public class CameraActivity extends Activity{
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
+		
 		setContentView(R.layout.activity_camera);
 		initUI();
 		initViewParams();
 		mMainHandler = new MainHandler();
 		googleFaceDetect = new GoogleFaceDetect(getApplicationContext(), mMainHandler);//dengying
 
-		switchBtn.setOnClickListener(new BtnListeners());
 		mMainHandler.sendEmptyMessageDelayed(EventUtil.CAMERA_HAS_STARTED_PREVIEW, 1500);
 		
 		mCameraInterface = CameraInterface.getInstance(getApplicationContext(), mMainHandler);
-		
-		/*Timer timer = new Timer();
-		timer.schedule(new TimerTask() {
-
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				isTakePicture = true;
-			}
-		}, 500, 15*1000);*/	// 0.5秒之后，每隔10秒做一次run()操作
-
 		
 		/* 重置数据库*/
 		if (isCleanData) {
@@ -116,8 +118,10 @@ public class CameraActivity extends Activity{
 		}
 		
 		//开启 netty,socket,tdmec 线程
-		myClientThread = new MyClientThread();
-		myClientThread.start();
+		//myClientThread = new MyClientThread();
+		//myClientThread.start();
+		
+		MyClient.init();
 	}
 
 	@Override
@@ -129,7 +133,6 @@ public class CameraActivity extends Activity{
 
 	private void initUI(){
 		surfaceView = (CameraSurfaceView)findViewById(R.id.camera_surfaceview);
-		switchBtn = (ImageButton)findViewById(R.id.btn_switch);
 		faceView = (FaceView)findViewById(R.id.face_view);
 		
 		img_face = (ImageView)findViewById(R.id.img_face);
@@ -139,26 +142,21 @@ public class CameraActivity extends Activity{
 	private void initViewParams(){
 		LayoutParams params = surfaceView.getLayoutParams();
 		Point p = DisplayUtil.getScreenMetrics(this);
+		
+		//params.width = p.x;//p.x;
+		//params.height = p.y/3*2;//p.y; //预览区域调整到3/2高度处
+		
 		params.width = p.x;
 		params.height = p.y;
+		
+		Log.e("dengying","Screen---Width = " + p.x + "---Height = " +p.y);
+		
 		previewRate = DisplayUtil.getScreenRate(this); //默认全屏的比例预览
 		surfaceView.setLayoutParams(params);
+		
+		faceView.setLayoutParams(params);
 	}
 
-	private class BtnListeners implements OnClickListener{
-
-		@Override
-		public void onClick(View v) {
-			// TODO Auto-generated method stub
-			switch(v.getId()){
-			case R.id.btn_switch:
-				switchCamera();
-				break;
-			default:break;
-			}
-		}
-
-	}
 	private  class MainHandler extends Handler{
 
 		@Override
@@ -169,13 +167,45 @@ public class CameraActivity extends Activity{
 				
 				Face[] faces = (Face[]) msg.obj;
 				faceView.setFaces(faces);
-				
+
 				if(faces != null && faces.length >0 && isTakePicture){
-					takePicture();
-					showMessage("检测到人脸，拍照！");
 					
-					isTakePicture = false;
-					Log.e("dengying","takePicture");
+					//坐标转换
+					Matrix mMatrix = new Matrix();
+					RectF mRect = new RectF();
+					boolean isMirror = false;
+					int Id = CameraInterface.getInstance().getCameraId();
+					if (Id == CameraInfo.CAMERA_FACING_BACK) {
+						isMirror = false; // 后置Camera无需mirror
+					} else if (Id == CameraInfo.CAMERA_FACING_FRONT) {
+						isMirror = true; // 前置Camera需要mirror
+					}
+					Point p = DisplayUtil.getScreenMetrics(CameraActivity.this);
+					Util.prepareMatrix(mMatrix, isMirror, 90, p.x, p.y);
+
+					mMatrix.postRotate(0); // Matrix.postRotate默认是顺时针
+
+					// 只识别一个
+					int mRectBottom = 0;
+					for (int i = 0; i < 1; i++) {
+						mRect.set(faces[i].rect);
+						mMatrix.mapRect(mRect);
+
+						int mRectLeft = Math.round(mRect.left);
+						int mRectTop = Math.round(mRect.top);
+						int mRectRight = Math.round(mRect.right);
+						mRectBottom = Math.round(mRect.bottom);
+
+						//Log.e("dengying", "CameraActivity.java,UPDATE_FACE_RECT[" + mRectLeft + "," + mRectTop + "," + mRectRight + "," + mRectBottom + "]");
+					}
+					
+					if(mRectBottom <900){//在固定区域识别才有效
+						takePicture();
+						Log.e("dengying","takePicture");
+						showMessage("检测到人脸，拍照！");
+						
+						isTakePicture = false;
+					}
 				}
 				
 				break;
@@ -229,7 +259,7 @@ public class CameraActivity extends Activity{
 
 				showMessage(s_delete_result);
 				
-				break;					
+				break;
 				
 			case EventUtil.BAIDU_FACE_VERIFY:
 				if (mFaceVerifyThread != null) {
@@ -257,7 +287,7 @@ public class CameraActivity extends Activity{
 			case EventUtil.BAIDU_FACE_IDENTIFY:
 				if (mFaceIdentifyThread != null) {  
 					mFaceIdentifyThread.interrupt();
-					mFaceIdentifyThread = null;  
+					mFaceIdentifyThread = null;
 			     }
 				
 				String s_identify_result =  (String) msg.obj;
@@ -312,7 +342,7 @@ public class CameraActivity extends Activity{
 							while (cursor.moveToNext()) {
 								int id = cursor.getInt(0); // 获取第一列的值,第一列的索引从0开始
 								//i_uid = cursor.getInt(1); 
-								pic_url = cursor.getString(2);
+								pic_url = cursor.getString(cursor.getColumnIndex("picurl"));
 							}
 							cursor.close();
 							helper.close();
@@ -335,19 +365,21 @@ public class CameraActivity extends Activity{
 				}
 				
 				if(error_msg.equals("no user in group")){
-					s_identify_message="人脸没有注册，现在开始注册！";
-
-					//人脸注册 
-					if(mFaceAddThread == null){
-						mFaceAddThread = new FaceAddThread();
-					}
-					mFaceAddThread.start();
+					s_identify_message="人脸库没有注册！";
 					
+					img_face.setImageResource(R.drawable.default_face);
+					mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 2000);
+					
+					txt_score.setText("Score:"+score);
+					txt_usrinfo.setText("");
 				}else if(error_msg.equals("face not found")){
 					s_identify_message="人脸没有没有找到，重新开始检测！";
 					
 					img_face.setImageResource(R.drawable.default_face);
 					mMainHandler.sendEmptyMessageDelayed(EventUtil.FACE_TAKE_PICTURE, 2000);
+					
+					txt_score.setText("Score:"+score);
+					txt_usrinfo.setText("");
 				}else if(score < 80){
 					s_identify_message = "人脸没有找到合适的人脸库，请重新验证！";
 					
@@ -364,6 +396,78 @@ public class CameraActivity extends Activity{
 	
 					txt_score.setText("Score:"+score);
 					txt_usrinfo.setText(user_info+"\nuid="+uid+"\nscore="+score);
+					
+					
+					//抓拍结果，上传服务器
+	        		//ByteBuf byteBuf = Unpooled.buffer(1024);
+	        		com.alibaba.fastjson.JSONObject json = new com.alibaba.fastjson.JSONObject();
+	        		
+					json.put("DeviceId", "88881001L");
+					json.put("DeviceCode", "88881001L");
+					
+					if(score < 80){
+						json.put("Result", 1);
+					}else{
+						json.put("Result", 0);
+					}
+					
+					json.put("FaceCordinate", 0);
+					json.put("PeopleId", uid);
+					json.put("PeopleCode", 0);
+					json.put("photoId", 0);
+					
+					SimpleDateFormat   formatter   =   new   SimpleDateFormat   ("yyyy-MM-dd HH:mm:ss");     
+					Date curDate =  new Date(System.currentTimeMillis()); 
+					String sDate = formatter.format(curDate);
+					json.put("capturetime", sDate);
+					
+					String base64Img = ImageUtil.bitmaptoString(BitmapFactory.decodeFile(curSaveFileName));//encode bitmaptoString
+					Log.e("dengying", "base64Img=" + base64Img);
+					
+					// 获取需要进行分帧的字段:Photo
+					int frameLength = 800;
+					if (base64Img != null && !base64Img.equals("")) {
+						byte[] infoBeanBytes = base64Img.getBytes();
+						int fileDatasNum = 0;
+						int fileLengthMax = infoBeanBytes.length;
+						int lastFileLength = fileLengthMax % frameLength;
+						if (lastFileLength == 0) {
+							fileDatasNum = fileLengthMax / frameLength;
+						} else {
+							fileDatasNum = fileLengthMax / frameLength + 1;
+						}
+						
+						Log.e("dengying", "base64Img,fileDatasNum=" + fileDatasNum);
+						
+						ByteBuf byteBuf = Unpooled.copiedBuffer(infoBeanBytes);
+						for (int i = 1; i <= fileDatasNum; i++) {
+							byte[] fileDatas;
+							if (i == fileDatasNum) {
+								//logger.info ("最后一包数据:" + lastFileLength);
+								fileDatas = new byte[lastFileLength];
+							} else {
+								fileDatas = new byte[frameLength];
+							}
+							byteBuf.readBytes(fileDatas);
+							String content = new String(fileDatas);
+							json.put("type", 1002);
+							json.put("frameCnt", fileDatasNum);
+							json.put("currentCnt", i);
+							json.put("Photo", content);
+							short msgNo = 0;
+							ByteBuf buf = Unpooled.buffer(4 + json.toJSONString().getBytes().length);
+							buf.writeShort(ByteUtil.changeByte((short) json.toJSONString().getBytes().length));// 长度
+							buf.writeBytes(json.toJSONString().getBytes());
+							buf.writeShort(ByteUtil.changeByte(msgNo));
+							
+							TdmecMessage bm = new TdmecMessage((byte) 0x04, (byte) 0x00, (byte) 0, buf.array());
+							MyClientHandler.mChannelHandlerContext.writeAndFlush(bm);
+							buf.release();
+							
+							//Log.e("dengying","writeAndFlush");
+						}
+						byteBuf.release();
+					}
 				}
 				
 				showMessage(s_identify_message);
@@ -523,7 +627,7 @@ public class CameraActivity extends Activity{
 	class FaceAddThread extends Thread {
 
 		public void run() {
-			int add_result = FaceAdd.add(curSaveFileName);
+			int add_result = 0;//FaceAdd.add(curSaveFileName);
 			
 			Message m = mMainHandler.obtainMessage();
 			m.what = EventUtil.BAIDU_FACE_ADD;
@@ -545,7 +649,7 @@ public class CameraActivity extends Activity{
 			helper.delAll();
 			
 			//删除百度数据库
-			for(int i=1;i<6;i++){
+			for(int i=1;i<20;i++){
 				boolean ret = FaceDelete.delete(i);
 			}
 			

@@ -5,6 +5,8 @@ import android.util.Log;
 import com.baidu.ai.aip.utils.Base64Util;
 import com.baidu.ai.aip.utils.FileUtil;
 import com.baidu.ai.aip.utils.HttpUtil;
+import com.gi2t.face.detect.activity.MyApplication;
+import com.gi2t.face.detect.db.DBHelper;
 
 import java.net.URLEncoder;
 
@@ -29,7 +31,7 @@ public class FaceDelete {
     * https://ai.baidu.com/file/470B3ACCA3FE43788B5A963BF0B625F3
     * 下载
     */
-    public static boolean delete(int id) {
+    public static boolean delete(int uid) {
     	boolean ret = false;
     	
 		baiduToken = AuthService.getAuth();
@@ -38,7 +40,7 @@ public class FaceDelete {
         // 请求url
         String url = "https://aip.baidubce.com/rest/2.0/face/v2/faceset/user/delete";
         try {
-            String param = "uid=" + id;
+            String param = "uid=" + uid;
 
             // 注意这里仅为了简化编码每一次请求都去获取access_token，线上环境access_token有过期时间， 客户端可自行缓存，过期后重新获取。
             String accessToken = baiduToken;//"[调用鉴权接口获取的token]";
@@ -61,8 +63,14 @@ public class FaceDelete {
             
             Log.e("dengying","FaceDelete result="+result);
             
-            
             ret = getDeleteResult(result);
+            
+            
+            //删除本地数据库
+			if (ret) {
+				DBHelper helper = new DBHelper(MyApplication.getContext());
+				helper.delByUid(uid);
+			}
         } catch (Exception e) {
             e.printStackTrace();
             
@@ -79,12 +87,9 @@ public class FaceDelete {
 	        
 			String error_code = root.getString("error_code");
 			
-			if(error_code == null || error_code.equals("")){
-				ret = true;
-			}else{
-				ret = false;
-			}
+			Log.e("dengying","getDeleteResult error_code="+error_code);
 			
+			ret = false;
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

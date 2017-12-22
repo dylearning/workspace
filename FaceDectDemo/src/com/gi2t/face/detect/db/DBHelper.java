@@ -12,8 +12,10 @@ public class DBHelper extends SQLiteOpenHelper {
 	private static final String DB_NAME = "facedetect.db";
 	private static final int version = 1; 
 	private static final String TBL_NAME = "face";
-	private static final String CREATE_TBL = " create table " + TBL_NAME + "(_id integer primary key autoincrement, uid integer,picurl text) ";
+	private static final String CREATE_TBL = " create table " + TBL_NAME + "(_id integer primary key autoincrement, uid integer,peoplecode text,picurl text) ";
 	private SQLiteDatabase db;
+	
+	private static final String TAG = "dengying";
 	
 	/*
 	qlite3 database.db
@@ -35,7 +37,7 @@ public class DBHelper extends SQLiteOpenHelper {
 		try {
 			db.execSQL(CREATE_TBL);
 		} catch (SQLException ex) {
-			Log.d("AAAAA", "create table failure");
+			Log.d(TAG, "create table failure");
 		}
 		
        /* if(filePath.equals("/storage/emulated/0/PlayCamera/dengying.jpg")){
@@ -60,11 +62,32 @@ public class DBHelper extends SQLiteOpenHelper {
 			db.close();
 			return true;
 		} catch (SQLException ex) {
-			Log.d("AAAAA", "insert table failure");
+			Log.d(TAG, "insert table failure");
 			return false;
 		}
 	}
+	
+	public Cursor queryByPeopleCode(String peopleCode) {
+		SQLiteDatabase db = getWritableDatabase();
 
+		Cursor c = db.rawQuery("select * from face where peoplecode =?", new String[] { String.valueOf(peopleCode)});
+		return c;
+	}	
+	
+	public boolean updateByUid(int uid, ContentValues values) {
+		try {
+			if (db == null) {
+				db = getWritableDatabase();
+			}
+			db.update(TBL_NAME, values, "uid=?", new String[] { String.valueOf(uid) });
+			db.close();
+			return true;
+		} catch (SQLException ex) {
+			Log.d(TAG, "update table failure");
+			return false;
+		}
+	}
+	
 	public Cursor queryByUid(int uid) {
 		SQLiteDatabase db = getWritableDatabase();
 		//Cursor c = db.query(TBL_NAME, null, "number like ?", new String[] { "%"+String.valueOf(number)}, null, null, null);
@@ -85,15 +108,15 @@ public class DBHelper extends SQLiteOpenHelper {
 		return c;
 	}		
 	
-	public boolean del(int id) {
+	public boolean delByUid(int uid) {
 		try {
 			if (db == null) {
 				db = getWritableDatabase();
 			}
-			db.delete(TBL_NAME, "_id=?", new String[] { String.valueOf(id) });
+			db.delete(TBL_NAME, "uid=?", new String[] { String.valueOf(uid) });
 			return true;
 		} catch (SQLException ex) {
-			Log.d("AAAAA", "update table failure");
+			Log.d(TAG, "delByUid failure");
 			return false;
 		}
 	}
@@ -108,25 +131,11 @@ public class DBHelper extends SQLiteOpenHelper {
 			
 			return true;
 		} catch (SQLException ex) {
-			Log.d("AAAAA", "update table failure");
+			Log.d(TAG, "update table failure");
 			return false;
 		}
 	}
 	
-	public boolean update(String local, ContentValues values) {
-		try {
-			if (db == null) {
-				db = getWritableDatabase();
-			}
-			db.update("weight", values, "local=?", new String[] { local });
-			db.close();
-			return true;
-		} catch (SQLException ex) {
-			Log.d("AAAAA", "update table failure");
-			return false;
-		}
-	}
-
 	@Override
 	public void close() {
 		if (db != null)

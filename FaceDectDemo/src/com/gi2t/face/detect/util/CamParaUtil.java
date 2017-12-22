@@ -94,7 +94,7 @@ public class CamParaUtil {
 		List<Size> previewSizes = params.getSupportedPreviewSizes();
 		for(int i=0; i< previewSizes.size(); i++){
 			Size size = previewSizes.get(i);
-			Log.i("dengying", "previewSizes:width = "+size.width+" height = "+size.height);
+			//Log.i("dengying", "previewSizes:width = "+size.width+" height = "+size.height);
 		}
 	}
 
@@ -105,7 +105,7 @@ public class CamParaUtil {
 		List<Size> pictureSizes = params.getSupportedPictureSizes();
 		for(int i=0; i< pictureSizes.size(); i++){
 			Size size = pictureSizes.get(i);
-			Log.i("dengying", "pictureSizes:width = "+ size.width +" height = " + size.height);
+			//Log.i("dengying", "pictureSizes:width = "+ size.width +" height = " + size.height);
 		}
 	}
 	/**打印支持的聚焦模式

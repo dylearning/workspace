@@ -1,6 +1,9 @@
 package com.gi2t.face.detect.util;
 
 import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
+
+//import org.apache.commons.codec.binary.Base64;
 
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
@@ -42,4 +45,39 @@ public class ImageUtil {
 		string = Base64.encodeToString(bytes, Base64.DEFAULT);
 		return string;
 	}
+	
+	
+	/**
+	 * 将二进制数据编码为BASE64字符串
+	 * 
+	 * @param binaryData
+	 * @return
+	 */
+	public static String encode(Bitmap bitmap) {
+		try {
+			String string = null;
+			ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+			bitmap.compress(CompressFormat.JPEG, 100, bStream);
+			byte[] binaryData = bStream.toByteArray();
+			
+			return new String(org.apache.commons.codec.binary.Base64.encodeBase64(binaryData), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			return null;
+		}
+	}
+
+	/**
+	 * 将BASE64字符串恢复为二进制数据
+	 * 
+	 * @param base64String
+	 * @return
+	 */
+	public static byte[] decode(String base64String) {
+		try {
+			return org.apache.commons.codec.binary.Base64.decodeBase64(base64String.getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			return null;
+		}
+	}
+
 }
